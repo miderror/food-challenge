@@ -40,7 +40,7 @@ async def about_project_handler(callback: CallbackQuery):
             sender = sender_map.get(content.media_type)
 
             if sender:
-                await sender(file, caption=content.text)
+                await sender(file, caption=content.text, reply_markup=keyboard)
             else:
                 logging.warning(
                     f"Неизвестный тип медиа {content.media_type} для 'О проекте'"
