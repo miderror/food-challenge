@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from phonenumber_field.modelfields import PhoneNumberField
 
 
@@ -29,10 +30,28 @@ class User(models.Model):
         auto_now_add=True, verbose_name="Дата регистрации"
     )
 
+    class ChallengeStatus(models.TextChoices):
+        ACTIVE = "ACTIVE", "Активен"
+        COMPLETED = "COMPLETED", "Завершен (успешно)"
+        EXPIRED = "EXPIRED", "Завершен (по времени)"
+
+    challenge_status = models.CharField(
+        max_length=10,
+        choices=ChallengeStatus.choices,
+        default=ChallengeStatus.ACTIVE,
+        verbose_name="Статус челленджа",
+    )
+    challenge_end_date = models.DateTimeField(
+        null=True, blank=True, verbose_name="Дата завершения челленджа"
+    )
+    final_eaten_count = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Итоговое кол-во продуктов"
+    )
+
     def save(self, *args, **kwargs):
         if self.height_cm and self.weight_kg:
             height_m = self.height_cm / 100
-            self.bmi = round(self.weight_kg / (height_m ** 2), 2)
+            self.bmi = round(self.weight_kg / (height_m**2), 2)
         super().save(*args, **kwargs)
 
     def __str__(self):

@@ -65,7 +65,7 @@ class FAQ(models.Model):
 class BotTexts(models.Model):
     welcome_message = models.TextField(
         verbose_name="Приветственное сообщение",
-        default="Добро пожаловать в челлендж '400 продуктов'! Я помогу вам отслеживать ваш прогресс.",
+        default="Добро пожаловать в челлендж «400 продуктов»! Я помогу вам отслеживать ваш прогресс.",
         help_text="Отображается после успешной авторизации.",
     )
     request_contact_message = models.TextField(

@@ -97,6 +97,8 @@ def get_product_by_id(product_id: int):
 def add_eaten_product(user_id: int, product_id: int):
     try:
         user = User.objects.get(telegram_id=user_id)
+        if user.challenge_status != User.ChallengeStatus.ACTIVE:
+            return False, "Челлендж уже завершен."
         product = Product.objects.get(id=product_id)
         user.eaten_products.add(product)
         return True, product.name

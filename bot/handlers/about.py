@@ -45,7 +45,7 @@ async def about_project_handler(callback: CallbackQuery):
                 logging.warning(
                     f"Неизвестный тип медиа {content.media_type} для 'О проекте'"
                 )
-                await callback.message.answer(content.text)
+                await callback.message.answer(content.text, reply_markup=keyboard)
         else:
             await callback.message.edit_text(content.text, reply_markup=keyboard)
 

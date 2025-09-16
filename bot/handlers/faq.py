@@ -35,7 +35,7 @@ async def show_faq_answer_handler(callback: CallbackQuery, callback_data: FaqCal
         )
         return
 
-    full_text = f"*{faq_item.question}*\n\n{faq_item.answer}"
+    full_text = f"{faq_item.question}\n\n{faq_item.answer}"
 
     try:
         if faq_item.media_file and faq_item.media_type:
