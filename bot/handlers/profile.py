@@ -22,6 +22,9 @@ async def my_profile_handler(callback: CallbackQuery):
     days = profile_data["days"]
     eaten_count = profile_data["eaten_count"]
     eaten_list = profile_data["eaten_list"]
+    height = profile_data["height"]
+    weight = profile_data["weight"]
+    bmi = profile_data["bmi"]
 
     if not eaten_list:
         eaten_list_str = "Вы еще не добавили ни одного продукта."
@@ -42,6 +45,10 @@ async def my_profile_handler(callback: CallbackQuery):
         f"<b>👤 Ваш профиль</b>\n\n"
         f"<b>Прогресс:</b> {eaten_count} из 400 продуктов.\n"
         f"<b>Дней в челлендже:</b> {days} из 365.\n\n"
+        f"<b>Ваши данные:</b>\n"
+        f"Рост: {height} см\n"
+        f"Вес: {weight} кг\n"
+        f"ИМТ: {bmi}\n\n"
         f"<b>Съеденные продукты:</b>\n{eaten_list_str}"
     )
 

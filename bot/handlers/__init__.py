@@ -11,8 +11,8 @@ from .start import router as start_router
 
 def setup_handlers(dp: Dispatcher) -> None:
     dp.include_routers(
-        inline_search_router,
         start_router,
+        inline_search_router,
         menu_router,
         profile_router,
         product_actions_router,

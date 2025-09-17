@@ -1,12 +1,21 @@
+import html
+
 from aiogram import F, Router
+from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import (
+    CallbackQuery,
+    FSInputFile,
+    Message,
+)
 
+from backend.products.models import Product
 from bot.handlers.menu import show_main_menu
 from bot.keyboards.callbacks import ProductCallback
 from bot.keyboards.inline_keyboards import (
     get_back_to_menu_kb,
+    get_back_to_products_kb,
     get_product_categories_kb,
     get_product_confirmation_kb,
     get_products_kb,
@@ -49,18 +58,25 @@ async def show_products(callback: CallbackQuery, callback_data: ProductCallback)
     end_index = start_index + PRODUCTS_PER_PAGE
     products_on_page = all_products[start_index:end_index]
 
-    try:
-        await callback.message.edit_text(
-            "Выберите продукт:",
-            reply_markup=get_products_kb(
-                products=products_on_page,
-                category_id=callback_data.category_id,
-                current_page=page,
-                total_pages=total_pages,
-            ),
-        )
-    except TelegramBadRequest:
-        pass
+    text = "Выберите продукт:"
+    keyboard = get_products_kb(
+        products=products_on_page,
+        category_id=callback_data.category_id,
+        current_page=page,
+        total_pages=total_pages,
+    )
+
+    if callback.message.photo:
+        try:
+            await callback.message.delete()
+        except TelegramBadRequest:
+            pass
+        await callback.message.answer(text, reply_markup=keyboard)
+    else:
+        try:
+            await callback.message.edit_text(text, reply_markup=keyboard)
+        except TelegramBadRequest:
+            pass
     await callback.answer()
 
 
@@ -82,19 +98,57 @@ async def confirm_add_product(callback: CallbackQuery, callback_data: ProductCal
     await callback.answer()
 
 
+async def send_product_fact_message(
+    callback: CallbackQuery, product: Product, callback_data: ProductCallback
+):
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest:
+        pass
+
+    back_to_list_kb = get_back_to_products_kb(
+        category_id=callback_data.category_id, page=callback_data.page
+    )
+    safe_name = html.escape(product.name)
+    safe_fact = html.escape(product.fact or "") if product.fact else ""
+    text = f"✅ Продукт '<b>{safe_name}</b>' добавлен!\n\n{safe_fact}"
+
+    if product.main_photo:
+        photo = FSInputFile(product.main_photo.path)
+        caption = text
+        await callback.message.answer_photo(
+            photo,
+            caption=caption,
+            reply_markup=back_to_list_kb,
+            parse_mode=ParseMode.HTML,
+        )
+    else:
+        await callback.message.answer(
+            text, reply_markup=back_to_list_kb, parse_mode=ParseMode.HTML
+        )
+
+
 @router.callback_query(ProductCallback.filter((F.level == 3) & (F.action == "confirm")))
 async def process_add_product(callback: CallbackQuery, callback_data: ProductCallback):
     success, product_name = await add_eaten_product(
         user_id=callback.from_user.id, product_id=callback_data.product_id
     )
-    if success:
-        await callback.answer(f"Продукт '{product_name}' добавлен!", show_alert=True)
-    else:
+
+    if not success:
         await callback.answer(
             "Произошла ошибка или продукт уже добавлен.", show_alert=True
         )
+        await show_products(callback, callback_data)
+        return
 
-    await show_products(callback, callback_data)
+    await callback.answer(f"Продукт '{product_name}' добавлен!", show_alert=True)
+
+    product = await get_product_by_id(callback_data.product_id)
+
+    if product and (product.fact or product.main_photo):
+        await send_product_fact_message(callback, product, callback_data)
+    else:
+        await show_products(callback, callback_data)
 
 
 @router.callback_query(F.data == "suggest_product")

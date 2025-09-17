@@ -50,6 +50,9 @@ def get_user_profile_info(user_id: int):
             "days": days_in_challenge,
             "eaten_count": eaten_count,
             "eaten_list": eaten_products_list,
+            "height": user.height_cm,
+            "weight": user.weight_kg,
+            "bmi": user.bmi,
         }
     except User.DoesNotExist:
         return None
@@ -79,8 +82,10 @@ def get_available_product_categories(user_id: int):
 def get_uneaten_products_by_category(user_id: int, category_id: int):
     user = User.objects.get(telegram_id=user_id)
     eaten_product_ids = user.eaten_products.values_list("id", flat=True)
-    products = Product.objects.filter(category_id=category_id).exclude(
-        id__in=eaten_product_ids
+    products = (
+        Product.objects.filter(categories__id=category_id)
+        .exclude(id__in=eaten_product_ids)
+        .distinct()
     )
     return list(products.values_list("id", "name"))
 
@@ -149,8 +154,7 @@ def search_uneaten_products(user_id: int, query: str, limit: int = 10):
         eaten_product_ids = user.eaten_products.values_list("id", flat=True)
 
         products = (
-            Product.objects.select_related("category")
-            .filter(name__icontains=query)
+            Product.objects.filter(name__icontains=query)
             .exclude(id__in=eaten_product_ids)
             .order_by("name")[:limit]
         )

@@ -2,14 +2,9 @@ from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import (
-    CallbackQuery,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    Message,
-)
+from aiogram.types import CallbackQuery, Message
 
-from bot.keyboards.inline_keyboards import get_main_menu_kb
+from bot.keyboards.inline_keyboards import get_inline_search_kb, get_main_menu_kb
 from bot.utils.db import get_bot_texts
 
 router = Router()
@@ -32,18 +27,9 @@ async def back_to_main_menu_handler(callback: CallbackQuery, state: FSMContext):
 
 
 @router.message(Command("search"))
-async def search_command_handler(message: Message):
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="🔍 Начать поиск продукта",
-                    switch_inline_query_current_chat="",
-                )
-            ]
-        ]
-    )
+async def search_command_handler(message: Message, state: FSMContext):
+    await state.clear()
     await message.answer(
         "Нажмите кнопку ниже, чтобы начать поиск продукта прямо в этом чате.",
-        reply_markup=keyboard,
+        reply_markup=get_inline_search_kb(),
     )

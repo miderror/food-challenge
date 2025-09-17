@@ -30,11 +30,14 @@ class ProductCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("name", "category")
+    list_display = ("name",)
     search_fields = ("name",)
-    list_filter = ("category",)
-    autocomplete_fields = ("category",)
-    fields = ("category", "name")
+    list_filter = ("categories",)
+    filter_horizontal = ("categories",)
+    fieldsets = (
+        ("Основная информация", {"fields": ("name", "categories", "fact")}),
+        ("Медиафайлы", {"fields": ("icon_photo", "main_photo")}),
+    )
 
 
 @admin.register(ProductSuggestion)

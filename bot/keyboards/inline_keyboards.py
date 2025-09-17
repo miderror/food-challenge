@@ -180,3 +180,35 @@ def get_profile_kb(show_export_button: bool = False) -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="⬅️ В главное меню", callback_data="back_to_main_menu")
     )
     return builder.as_markup()
+
+
+def get_inline_search_kb() -> InlineKeyboardMarkup:
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text="🔍 Начать поиск продукта", switch_inline_query_current_chat=""
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="⬅️ В главное меню", callback_data="back_to_main_menu"
+            )
+        ],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_back_to_products_kb(category_id: int, page: int = 1) -> InlineKeyboardMarkup:
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text="⬅️ Назад к списку продуктов",
+                callback_data=ProductCallback(
+                    level=1,
+                    category_id=category_id,
+                    page=page,
+                ).pack(),
+            )
+        ]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)

@@ -17,11 +17,27 @@ class ProductCategory(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=100, verbose_name="Название продукта")
-    category = models.ForeignKey(
+    categories = models.ManyToManyField(
         ProductCategory,
-        on_delete=models.CASCADE,
         related_name="products",
-        verbose_name="Категория",
+        verbose_name="Категории",
+    )
+    fact = models.TextField(
+        blank=True, null=True, verbose_name="Интересный факт о продукте"
+    )
+    icon_photo = models.ImageField(
+        upload_to="product_icons/",
+        blank=True,
+        null=True,
+        verbose_name="Фото-иконка (для поиска)",
+        help_text="Маленькое фото для инлайн-режима.",
+    )
+    main_photo = models.ImageField(
+        upload_to="product_main_photos/",
+        blank=True,
+        null=True,
+        verbose_name="Основное фото",
+        help_text="Фото, которое отправляется после добавления продукта.",
     )
 
     def __str__(self):
@@ -31,7 +47,6 @@ class Product(models.Model):
         verbose_name = "Продукт"
         verbose_name_plural = "Продукты"
         ordering = ["name"]
-        unique_together = ("name", "category")
 
 
 class ProductSuggestion(models.Model):

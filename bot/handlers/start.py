@@ -55,7 +55,7 @@ async def contact_handler(
     await state.set_state(Registration.waiting_for_fio)
 
 
-@router.message(Registration.waiting_for_fio, F.text)
+@router.message(Registration.waiting_for_fio, F.text, ~F.text.startswith('/'))
 async def fio_handler(message: Message, state: FSMContext):
     if len(message.text) > 100:
         await message.answer("Пожалуйста, введите более коротко.")
@@ -67,7 +67,7 @@ async def fio_handler(message: Message, state: FSMContext):
     await state.set_state(Registration.waiting_for_hw)
 
 
-@router.message(Registration.waiting_for_hw, F.text)
+@router.message(Registration.waiting_for_hw, F.text, ~F.text.startswith('/'))
 async def hw_handler(message: Message, state: FSMContext):
     match = re.match(r"^(\d{2,3})\s+(\d{2,3})$", message.text.strip())
     if not match:
@@ -95,3 +95,12 @@ async def hw_handler(message: Message, state: FSMContext):
     texts = await get_bot_texts()
     await message.answer(texts.registration_success_message)
     await show_main_menu(message, texts.main_menu_message)
+
+@router.message(Registration.waiting_for_contact)
+@router.message(Registration.waiting_for_fio)
+@router.message(Registration.waiting_for_hw)
+async def registration_process_blocker(message: Message):
+    await message.answer(
+        "Пожалуйста, завершите регистрацию.\n\n"
+        "Если что-то пошло не так, можете начать заново командой /start."
+    )
