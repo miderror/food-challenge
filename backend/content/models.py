@@ -6,6 +6,7 @@ class MediaType(models.TextChoices):
     VIDEO = "VIDEO", "Видео"
     DOCUMENT = "DOCUMENT", "Документ"
     AUDIO = "AUDIO", "Аудио"
+    MEDIA_GROUP = "MEDIA_GROUP", "Медиагруппа (несколько фото)"
 
 
 class SiteSettings(models.Model):
@@ -40,7 +41,7 @@ class FAQ(models.Model):
         help_text="Опциональный файл для отправки (фото, видео, документ, аудио).",
     )
     media_type = models.CharField(
-        max_length=10,
+        max_length=15,
         choices=MediaType.choices,
         blank=True,
         null=True,
@@ -143,11 +144,12 @@ class AboutProject(models.Model):
         verbose_name="Медиафайл",
     )
     media_type = models.CharField(
-        max_length=10,
+        max_length=15,
         choices=MediaType.choices,
         blank=True,
         null=True,
         verbose_name="Тип медиафайла",
+        help_text="Выберите 'Медиагруппа' для загрузки нескольких фото ниже. В противном случае, загрузите один файл выше.",
     )
 
     def __str__(self):
@@ -156,3 +158,30 @@ class AboutProject(models.Model):
     class Meta:
         verbose_name = "О проекте"
         verbose_name_plural = "О проекте"
+
+
+class AboutProjectMedia(models.Model):
+    about_project = models.ForeignKey(
+        AboutProject,
+        on_delete=models.CASCADE,
+        related_name="media_items",
+        verbose_name="Связь с 'О проекте'",
+    )
+    image = models.ImageField(
+        upload_to="about_media_group/",
+        verbose_name="Фото",
+        help_text="Фотография для медиагруппы.",
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Порядок сортировки",
+        help_text="Чем меньше число, тем раньше будет фото в группе.",
+    )
+
+    def __str__(self):
+        return f"Фото #{self.pk} для 'О проекте'"
+
+    class Meta:
+        verbose_name = "Медиа для 'О проекте'"
+        verbose_name_plural = "Медиа для 'О проекте'"
+        ordering = ["order"]

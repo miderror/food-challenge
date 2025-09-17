@@ -2,7 +2,14 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
-from .models import FAQ, AboutProject, BotTexts, SiteSettings
+from .models import (
+    FAQ,
+    AboutProject,
+    AboutProjectMedia,
+    BotTexts,
+    MediaType,
+    SiteSettings,
+)
 
 
 class SingletonModelAdmin(admin.ModelAdmin):
@@ -32,9 +39,19 @@ class BotTextsAdmin(SingletonModelAdmin):
     pass
 
 
+class AboutProjectMediaInline(admin.TabularInline):
+    model = AboutProjectMedia
+    extra = 1
+    fields = ("image", "order")
+
+
 @admin.register(AboutProject)
 class AboutProjectAdmin(SingletonModelAdmin):
-    fieldsets = (("Содержимое", {"fields": ("text", ("media_file", "media_type"))}),)
+    fieldsets = (("Содержимое", {"fields": ("text", "media_type", "media_file")}),)
+    inlines = [AboutProjectMediaInline]
+
+    class Media:
+        js = ("admin/js/about_project_admin_fields.js",)
 
 
 @admin.register(FAQ)
@@ -48,3 +65,11 @@ class FAQAdmin(admin.ModelAdmin):
         ("Основная информация", {"fields": ("question", "order")}),
         ("Содержимое ответа", {"fields": ("answer", ("media_file", "media_type"))}),
     )
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        choices_without_media_group = [
+            choice for choice in MediaType.choices if choice[0] != MediaType.MEDIA_GROUP
+        ]
+        form.base_fields["media_type"].choices = choices_without_media_group
+        return form

@@ -3,7 +3,13 @@ from django.utils import timezone
 from phonenumber_field.phonenumber import to_python
 from phonenumbers.phonenumberutil import is_valid_number
 
-from backend.content.models import FAQ, AboutProject, BotTexts, SiteSettings
+from backend.content.models import (
+    FAQ,
+    AboutProject,
+    BotTexts,
+    MediaType,
+    SiteSettings,
+)
 from backend.products.models import Product, ProductCategory, ProductSuggestion
 from backend.users.models import User
 
@@ -124,8 +130,15 @@ def get_community_link():
 
 @sync_to_async
 def get_about_project_content():
-    content, _ = AboutProject.objects.get_or_create(pk=1)
-    return content
+    content, _ = AboutProject.objects.prefetch_related("media_items").get_or_create(
+        pk=1
+    )
+
+    media_items = []
+    if content.media_type == MediaType.MEDIA_GROUP:
+        media_items = list(content.media_items.all())
+
+    return {"content": content, "media_items": media_items}
 
 
 @sync_to_async

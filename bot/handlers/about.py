@@ -3,6 +3,7 @@ import logging
 from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery, FSInputFile
+from aiogram.utils.media_group import MediaGroupBuilder
 
 from backend.content.models import MediaType
 from bot.keyboards.inline_keyboards import get_back_to_menu_kb
@@ -13,7 +14,10 @@ router = Router()
 
 @router.callback_query(F.data == "about_project")
 async def about_project_handler(callback: CallbackQuery):
-    content = await get_about_project_content()
+    data = await get_about_project_content()
+    content = data["content"]
+    media_items = data["media_items"]
+
     keyboard = get_back_to_menu_kb()
 
     if not content or not content.text:
@@ -23,12 +27,40 @@ async def about_project_handler(callback: CallbackQuery):
         return
 
     try:
-        if content.media_file and content.media_type:
+        if content.media_type:
             try:
                 await callback.message.delete()
             except TelegramBadRequest:
                 pass
 
+        if content.media_type == MediaType.MEDIA_GROUP:
+            valid_media_files = []
+            for item in media_items:
+                try:
+                    file = FSInputFile(item.image.path)
+                    valid_media_files.append(file)
+                except FileNotFoundError:
+                    logging.error(f"Файл для медиагруппы не найден: {item.image.path}")
+
+            if len(valid_media_files) >= 2:
+                media_group_builder = MediaGroupBuilder()
+                for file in valid_media_files[:10]:
+                    media_group_builder.add_photo(media=file)
+
+                await callback.message.answer_media_group(
+                    media=media_group_builder.build()
+                )
+                await callback.message.answer(content.text, reply_markup=keyboard)
+                return
+
+            elif len(valid_media_files) == 1:
+                await callback.message.answer_photo(
+                    valid_media_files[0], caption=content.text, reply_markup=keyboard
+                )
+            else:
+                await callback.message.answer(content.text, reply_markup=keyboard)
+
+        elif content.media_file and content.media_type:
             file = FSInputFile(content.media_file.path)
 
             sender_map = {
