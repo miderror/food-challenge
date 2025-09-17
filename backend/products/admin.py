@@ -22,7 +22,7 @@ class ProductCategoryAdmin(admin.ModelAdmin):
         if count > 0:
             url = (
                 reverse("admin:products_product_changelist")
-                + f"?category__id__exact={obj.pk}"
+                + f"?categories__id__exact={obj.pk}"
             )
             return format_html('<a href="{}">Смотреть ({})</a>', url, count)
         return "Нет продуктов"
@@ -30,7 +30,7 @@ class ProductCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("name",)
+    list_display = ("name", "display_categories")
     search_fields = ("name",)
     list_filter = ("categories",)
     filter_horizontal = ("categories",)
@@ -38,6 +38,27 @@ class ProductAdmin(admin.ModelAdmin):
         ("Основная информация", {"fields": ("name", "categories", "fact")}),
         ("Медиафайлы", {"fields": ("icon_photo", "main_photo")}),
     )
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.prefetch_related("categories").annotate(
+            category_count=Count("categories")
+        )
+        return queryset
+
+    @admin.display(description="Категории", ordering="category_count")
+    def display_categories(self, obj: Product) -> str:
+        categories = obj.categories.all()
+        count = categories.count()
+        if count == 0:
+            return "—"
+
+        display_limit = 2
+        category_names = [cat.name for cat in categories]
+        if count > display_limit:
+            return " | ".join(category_names[:display_limit]) + "| ..."
+        else:
+            return " | ".join(category_names)
 
 
 @admin.register(ProductSuggestion)

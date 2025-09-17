@@ -2,6 +2,13 @@
 
 from django.db import migrations, models
 
+def transfer_categories_forward(apps, schema_editor):
+    Product = apps.get_model('products', 'Product')
+
+    for product in Product.objects.iterator():
+        if product.category_id:
+            product.categories.add(product.category)
+
 
 class Migration(migrations.Migration):
 
@@ -33,6 +40,10 @@ class Migration(migrations.Migration):
             model_name='product',
             name='main_photo',
             field=models.ImageField(blank=True, help_text='Фото, которое отправляется после добавления продукта.', null=True, upload_to='product_main_photos/', verbose_name='Основное фото'),
+        ),
+        migrations.RunPython(
+            code=transfer_categories_forward,
+            reverse_code=migrations.RunPython.noop
         ),
         migrations.RemoveField(
             model_name='product',
