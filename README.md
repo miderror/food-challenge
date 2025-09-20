@@ -1,125 +1,97 @@
-## Техническая документация проекта "Dev-Mentor"
+# Food Challenge Bot ✨
 
-### **Используется:**
+A Telegram bot to help users track their dietary diversity through the "400 Food Challenge". This project includes a user-facing bot built with **aiogram** and a powerful admin panel powered by **Django**.
 
-*   **Язык:** python 3.12.0
-*   **Telegram-бот:** aiogram 3.21.0
-*   **Backend и Админ-панель:** django 5.2.5
-*   **База данных:** postgresql
-*   **Очередь задач:** celery
-*   **Брокер сообщений и кэш:** redis
-*   **Среда выполнения кода:** docker
-*   **Веб-сервер (production):** nginx + gunicorn
+## Features
 
-### **Схема взаимодействия компонентов:**
+-   **User Bot**:
+    -   Easy registration process.
+    -   Add products via categories or a fast inline search.
+    -   View personal profile with progress stats (eaten count, days in challenge, BMI).
+    -   Export the full list of eaten products to a `.txt` file.
+    -   Suggest new products to be added to the database.
 
-1.  **пользователь** отправляет код в **telegram-бот (aiogram)**.
-2.  бот создает задачу на проверку кода и помещает ее в очередь **redis**.
-3.  **celery worker** (отдельный процесс) забирает задачу из очереди.
-4.  worker запускает **docker-контейнер** для выполнения кода.
-5.  после выполнения, Worker анализирует результат:
-    *   если есть ошибка, сверяется с реестром типовых ошибок в **postgresql**.
-    *   если совпадений нет, отправляет ошибку на анализ в **ai api (groq)**.
-6.  worker сохраняет результат проверки (код, вывод, ошибку, ответ ai) в **postgresql**.
-7.  worker через **telegram-бот** отправляет отформатированный результат пользователю.
-8.  **администратор** через **админ-панель (django admin)** управляет пользователями, контентом и просматривает аналитику, обращаясь к данным в **postgresql**.
+-   **Admin Panel**:
+    -   Manage users and view their statistics.
+    -   Full CRUD (Create, Read, Update, Delete) for products and categories.
+    -   Moderate user-suggested products.
+    -   Edit all bot content (static texts, FAQ, "About" section).
+    -   Schedule and send mass broadcasts to all users.
 
-### **Ключевые компоненты и их логика**
+## Tech Stack
 
-#### 1. telegram-бот (`/bot`)
-*   **роль:** пользовательский интерфейс.
-*   **реализация:** написан на фреймворке `aiogram`. Структура:
-    *   **`handlers`**: обработка команд (`/start`), сообщений (прием кода), нажатий на кнопки.
-    *   **`keyboards`**: формирование кнопок меню (главное меню, кнопки после проверки).
-    *   **`middlewares`**: промежуточное ПО для авторизации. Каждый запрос от пользователя сначала проверяется на наличие доступа.
-    *   **`states`**: управление состояниями (например, состояние ожидания кода).
+-   **Backend**: Django
+-   **Telegram Bot**: aiogram 3
+-   **Database**: PostgreSQL
+-   **Task Queue**: Celery
+-   **Broker / Cache**: Redis
+-   **Containerization**: Docker, Docker Compose
+-   **Web Server (Prod)**: Nginx + Gunicorn
 
-#### 2. backend (`/backend`)
-*   **роль:** бизнес-логика, управление данными, административный интерфейс.
-*   **реализация:** django-проект, разделенный на логические приложения:
-    *   **`users`**: модели `User` и `Whitelist`. Отвечает за хранение данных о пользователях, их статистике и управление доступом.
-    *   **`checker`**: модели `Check` (лог проверки) и `CommonError` (реестр ошибок). Здесь же находится `runner.py` — модуль для взаимодействия с docker, и `tasks.py` — celery-задача для полной логики проверки кода.
-    *   **`content`**: модели `FAQ` и `SiteSettings` для управления контентом бота.
-    *   **`sender`**: модель `Broadcast` для создания и управления рассылками.
+## Getting Started
 
-#### 3. изолированное выполнение кода (`backend/checker/runner.py`)
-меры безопасности:
-*   **Изоляция:** контейнер не имеет доступа к сети (`network_disabled=True`) и основной файловой системе.
-*   **Ограничение ресурсов:** установлены лимиты на использование CPU (`cpu_shares`) и оперативной памяти (`mem_limit`).
-*   **Таймаут:** выполнение кода принудительно прерывается, если оно длится дольше заданного времени (`EXEC_TIMEOUT_SECONDS`).
-*   **Безопасность:** отключена возможность повышения привилегий в контейнере (`no-new-privileges`).
-*   **Очистка:** контейнер и временные файлы полностью удаляются после выполнения.
+### 1. Prerequisites
 
-### **Запуск проекта в prod-режиме**
+-   Docker and Docker Compose must be installed.
+-   Clone the repository: `git clone <your-repo-link>`
+-   Navigate to the project directory: `cd food-challenge`
 
-**Шаг 1: подготовка сервера**
-*   установить `docker` и `docker compose`.
-*   клонировать репозиторий проекта на сервер.
+### 2. Configuration
 
-**Шаг 2: конфигурация**
-*   создать `.env` в корне проекта.
-*   заполнить все необходимые переменные:
-    *   `DJANGO_SECRET_KEY`: cекретный ключ.
-    *   `ALLOWED_HOSTS`: ip/домен сервера.
-    *   `POSTGRES_*`: параметры для подключения к бд.
-    *   `REDIS_HOST`: `redis` (имя сервиса в docker compose).
-    *   `BOT_TOKEN`: токен telegram-бота.
-    *   `AI_API_KEY`: ключ для api (groq).
-    *   `AI_MODEL_NAME`: используемая модель (`llama3-8b-8192`).
-    *   `RUNNER_VOLUME_NAME`: Имя docker-volume для временных файлов
+Create a `.env` file in the project root and fill it with your credentials.
 
-**Шаг 3: сборка и запуск**
-в корне проекта выполнить команды из `Makefile` (или напрямую команды `docker compose`):
+```env
+# Django
+DJANGO_SECRET_KEY=your_strong_secret_key
+DEBUG=True
+ALLOWED_HOSTS=127.0.0.1,localhost
 
-1.  **собрать образы:**
+# PostgreSQL
+POSTGRES_DB=food_challenge_db
+POSTGRES_USER=food_challenge_user
+POSTGRES_PASSWORD=your_db_password
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+
+# Redis
+REDIS_HOST=redis
+REDIS_PORT=6379
+
+# Telegram Bot
+BOT_TOKEN=your_telegram_bot_token
+```
+
+### 3. Running the Project
+
+The project uses a `Makefile` for convenient command execution.
+
+#### Development
+
+1.  **Build and run all services:**
     ```bash
-    make build-prod
+    make dev-up
     ```
-2.  **запустить все сервисы в фоновом режиме:**
+2.  **Apply database migrations:**
     ```bash
-    make up-prod
+    make dev-migrate
     ```
-
-**Шаг 4: инициализация**
-
-1.  **применить миграции:**
+3.  **Create an admin user:**
     ```bash
-    make migrate-prod
+    make dev-superuser
     ```
-2.  **создать администратора:**
+    *The admin panel will be available at `http://localhost/admin/`.*
+
+4.  **(Optional) Seed the database with products:**
     ```bash
-    make superuser-prod
-    ```
-3.  **собрать статику:**
-    ```bash
-    make static-prod
+    make dev-seed-products
     ```
 
-### **Масштабирование проекта**
+---
 
-#### 1. увеличение производительности проверки кода
-если очередь задач на проверку кода растет, можно увеличить количество **celery-воркеров**.
-*   **действие:** в файле `docker/docker-compose.prod.yaml` можно увеличить количество реплик сервиса `celery_worker`, а также можно увеличить параметр `--concurrency` в команде запуска воркера, чтобы один воркер обрабатывал больше задач параллельно (зависит от мощности CPU сервера).
+#### Other useful commands:
+-   `make dev-logs s=bot`: View real-time logs for a service (e.g., `bot`, `backend`).
+-   `make dev-down`: Stop and remove all running containers.
 
-#### 2. добавление новых языков программирования
-система готова к расширению поддержки языков.
-*   **действие:** в файле `backend/checker/runner.py` достаточно добавить новую запись в словарь `LANG_CONFIG`.
-    ```python
-    LANG_CONFIG = {
-        "python": {
-            "image": "python:3.12-slim",
-            "command": lambda filename: f"python {filename}",
-            "filename": "main.py"
-        },
-        "javascript": { // Пример добавления нового языка
-            "image": "node:20-slim",
-            "command": lambda filename: f"node {filename}",
-            "filename": "index.js"
-        },
-    }
-    ```
-    после этого нужно будет доработать логику в боте, чтобы дать пользователю возможность выбирать язык.
+#### Production
 
-#### 3. масштабирование веб-сервера и базы данных
-*   **веб-сервер:** при высокой нагрузке на админ-панель можно увеличить количество gunicorn-воркеров в команде запуска сервиса `backend` или вынести его на отдельный сервер за балансировщиком нагрузки.
-*   **база данных:** для postgresql можно настроить репликацию (read replicas), чтобы снизить нагрузку на основную базу данных от запросов на чтение (например, при генерации аналитики).
+For production deployment, use the `prod-*` commands (`make prod-up`, `make prod-migrate`, etc.), which use `Gunicorn` and optimized Docker settings.
