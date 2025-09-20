@@ -9,10 +9,10 @@ DC_DEV=docker compose -f $(COMPOSE_FILE_DEV) -p $(COMPOSE_PROJECT_NAME_DEV) --en
 DC_PROD=docker compose -f $(COMPOSE_FILE_PROD) -p $(COMPOSE_PROJECT_NAME_PROD) --env-file $(ENV_FILE)
 
 .PHONY: help \
-dev-build dev-up dev-down dev-stop dev-restart dev-logs dev-shell \
+dev-build dev-up dev-down dev-stop dev-restart dev-logs dev-shell dev-link-images \
 dev-startapp dev-makemigrations dev-migrate dev-superuser dev-static dev-seed-products \
 prod-build prod-up prod-down prod-stop prod-restart prod-logs prod-shell \
-prod-migrate prod-superuser prod-static prod-seed-products
+prod-migrate prod-superuser prod-static prod-seed-products prod-link-images
 
 # ====================================================================================
 
@@ -55,6 +55,9 @@ dev-static:
 dev-seed-products:
 	$(DC_DEV) exec backend python backend/manage.py seed_products
 
+dev-link-images:
+	$(DC_DEV) exec backend python backend/manage.py link_product_images
+
 # ====================================================================================
 
 prod-build:
@@ -92,3 +95,6 @@ prod-static:
 
 prod-seed-products:
 	$(DC_PROD) exec backend python backend/manage.py seed_products
+
+prod-link-images:
+	$(DC_PROD) exec backend python backend/manage.py link_product_images
