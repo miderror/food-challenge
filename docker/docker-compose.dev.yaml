@@ -87,6 +87,24 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+  
+  celery_beat:
+    build:
+      context: ..
+      dockerfile: docker/python.dev.Dockerfile
+    container_name: food_challenge_celery_beat
+    command: celery -A backend.core beat -l INFO
+    volumes:
+      - ../:/app
+    env_file:
+      - ../.env
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   nginx:
     image: nginx:1.27.5-alpine

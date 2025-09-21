@@ -56,7 +56,7 @@ class ProductAdmin(admin.ModelAdmin):
         display_limit = 2
         category_names = [cat.name for cat in categories]
         if count > display_limit:
-            return " | ".join(category_names[:display_limit]) + "| ..."
+            return " | ".join(category_names[:display_limit]) + " | ..."
         else:
             return " | ".join(category_names)
 

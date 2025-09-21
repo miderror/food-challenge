@@ -4,6 +4,7 @@ from aiogram import BaseMiddleware
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
+from backend.users.models import User
 from bot.states.registration import Registration
 
 from ..utils.db import get_user_by_id
@@ -16,7 +17,7 @@ class AuthMiddleware(BaseMiddleware):
         event: Message | CallbackQuery,
         data: Dict[str, Any],
     ) -> Any:
-        user = await get_user_by_id(event.from_user.id)
+        user: User | None = await get_user_by_id(event.from_user.id)
 
         if not user:
             state: FSMContext = data.get("state")
@@ -38,6 +39,15 @@ class AuthMiddleware(BaseMiddleware):
             text = "Вы не зарегистрированы. Пожалуйста, отправьте команду /start."
 
             await event.answer(text)
+            return
+
+        if user.challenge_status != User.ChallengeStatus.ACTIVE:
+            message_text = "Ваш челлендж завершен. Спасибо за участие!"
+
+            if isinstance(event, CallbackQuery):
+                await event.answer(message_text, show_alert=True)
+            elif isinstance(event, Message):
+                await event.answer(message_text)
             return
 
         data["user"] = user
