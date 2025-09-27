@@ -49,7 +49,7 @@ def register_user(
 def get_user_profile_info(user_id: int):
     try:
         user = User.objects.prefetch_related("eaten_products").get(telegram_id=user_id)
-        days_in_challenge = (timezone.now() - user.date_joined).days
+        days_in_challenge = (timezone.now() - user.date_joined).days + 1
         eaten_count = user.eaten_products.count()
         eaten_products_list = list(user.eaten_products.values_list("name", flat=True))
         return {

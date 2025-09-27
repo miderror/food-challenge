@@ -23,7 +23,7 @@ async def send_results_async(user_id: int):
         user = await User.objects.aget(telegram_id=user_id)
         bot = Bot(token=settings.BOT_TOKEN)
 
-        days_spent = (user.challenge_end_date - user.date_joined).days
+        days_spent = (user.challenge_end_date - user.date_joined).days + 1
 
         if user.challenge_status == User.ChallengeStatus.COMPLETED:
             text = (

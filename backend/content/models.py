@@ -18,11 +18,11 @@ class SiteSettings(models.Model):
     )
 
     def __str__(self):
-        return "Группа единомашленников"
+        return "Группа единомышленников"
 
     class Meta:
-        verbose_name = "Группа единомашленников"
-        verbose_name_plural = "Группа единомашленников"
+        verbose_name = "Группа единомышленников"
+        verbose_name_plural = "Группа единомышленников"
 
 
 class FAQ(models.Model):

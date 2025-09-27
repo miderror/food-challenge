@@ -55,7 +55,7 @@ class UserAdmin(admin.ModelAdmin):
     @admin.display(description="Дней в челлендже")
     def get_days_in_challenge(self, obj):
         if obj.date_joined:
-            return (timezone.now() - obj.date_joined).days
+            return (timezone.now() - obj.date_joined).days + 1
         return 0
 
     @admin.display(description="Съедено продуктов")
