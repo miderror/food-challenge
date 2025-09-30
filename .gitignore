@@ -45,3 +45,5 @@ Thumbs.db
 media/
 static/
 tmp/
+prod_data_dump.sql
+prod_media_backup.tar.gz

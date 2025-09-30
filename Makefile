@@ -1,3 +1,8 @@
+ifneq (,$(wildcard ./.env))
+	include .env
+	export
+endif
+
 COMPOSE_PROJECT_NAME_DEV=food_challenge_dev
 COMPOSE_PROJECT_NAME_PROD=food_challenge_prod
 
@@ -104,3 +109,40 @@ prod-link-images:
 
 prod-update-facts:
 	$(DC_PROD) exec backend python backend/manage.py update_product_facts
+
+
+# ====================================================================================
+# === DATABASE & MEDIA MIGRATION ===
+# ====================================================================================
+
+DUMP_TABLES = \
+	products_productcategory \
+	products_product \
+	products_product_categories \
+	content_aboutproject \
+	content_aboutprojectmedia \
+	content_bottexts \
+	content_faq \
+	content_sitesettings
+
+DUMP_FLAGS = $(foreach table,$(DUMP_TABLES),-t $(table))
+
+prod-dump-data:
+	@echo "Creating dump for tables: $(DUMP_TABLES)..."
+	$(DC_PROD) exec -T -e PGPASSWORD=$(POSTGRES_PASSWORD) db pg_dump -h $(POSTGRES_HOST) -U $(POSTGRES_USER) -d $(POSTGRES_DB) --clean --if-exists $(DUMP_FLAGS) > prod_data_dump.sql
+	@echo "Dump saved to prod_data_dump.sql"
+
+prod-restore-data:
+	@echo "Restoring data from prod_data_dump.sql..."
+	cat prod_data_dump.sql | $(DC_PROD) exec -T -e PGPASSWORD=$(POSTGRES_PASSWORD) db psql -h $(POSTGRES_HOST) -U $(POSTGRES_USER) -d $(POSTGRES_DB)
+	@echo "Data restored successfully."
+
+prod-backup-media:
+	@echo "Backing up media volume..."
+	$(DC_PROD) run --rm --entrypoint tar -v $(shell pwd):/backup backend czvf /backup/prod_media_backup.tar.gz -C /app/backend/media .
+	@echo "Media backup saved to prod_media_backup.tar.gz"
+
+prod-restore-media:
+	@echo "Restoring media volume..."
+	$(DC_PROD) run --rm --entrypoint tar -v $(shell pwd):/backup backend xzvf /backup/prod_media_backup.tar.gz -C /app/backend/media
+	@echo "Media restored successfully."

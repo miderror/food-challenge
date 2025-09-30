@@ -26,3 +26,7 @@ db.sqlite3
 
 # Docs
 README.md
+
+# Temporary migration/backup files
+prod_data_dump.sql
+prod_media_backup.tar.gz
